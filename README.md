@@ -1,15 +1,10 @@
-# ship-ready
+# ship-ready · universal baseline
 
-Branch-based starting points for apps that **run locally and ship as a single container** out of the box.
+You cloned the `universal/20260624` branch. It ships only conventions, no app code:
 
-Each branch is a self-contained baseline. Clone the branch that fits your project, build on top of it, and the included guide keeps the result easy to run locally and deploy as one container.
+- **`AGENTS.md`** — the run/deploy contract every app here follows (agents read this first).
+- **`conventions/`** — per-topic guides the contract routes you to (stacks, datastores, env, networking, deployment, and a `preview.toml` escape hatch).
 
-## Branches
+Build your app on top. The contract keeps it easy to **run locally** and **ship as a single container** out of the box, without constraining how you design or test your code.
 
-- **`universal/20260624`** — universal baseline for any stack (static · Node · React · Elixir/Phoenix, with PostgreSQL & Redis).
-
-Clone the branch you want as your project's starting point:
-
-```bash
-git clone --branch universal/20260624 --single-branch <repo-url> my-app
-```
+When your app is ready, replace this README with your project's own — including the green-field local run steps (migrations + seed) and any dummy accounts the seed creates, as required by `AGENTS.md`.
