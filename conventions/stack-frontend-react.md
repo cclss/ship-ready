@@ -19,7 +19,10 @@ The framework you depend on determines the build output directory that gets serv
 | **Next (server / SSR)** | `next` dep + `output: 'standalone'` or default | built server process | single port |
 
 - **Vite / CRA / Next-export** build to a static directory; the runtime serves that
-  directory directly. You do **not** write a server.
+  directory directly. You do **not** write a server — and if you ship a Dockerfile,
+  its CMD must serve the built output (e.g. `serve -s dist`), **never** `vite preview`
+  (it writes a temp bundle next to `vite.config.*` at boot; the deploy runtime rootfs
+  is read-only, so it crashes before listening).
 - **Next server (standalone or default)** runs as a long-lived process. It must bind to
   the `PORT` environment variable (see `networking.md`). The runtime builds and starts it
   for you; you don't hand-roll the start command for the standard layout.
