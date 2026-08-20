@@ -28,12 +28,33 @@ So keep both paths intact:
 These are minimal starting points. Adapt freely.
 
 ### Static site
-Serve the built files with any small static server. Make it honor `PORT` and add SPA fallback if you have client-side routing.
+Serve the **built** files with a small static server. Make it honor `PORT` and add SPA fallback if you have client-side routing.
+
 ```dockerfile
-FROM nginx:alpine
-COPY ./dist /usr/share/nginx/html
-# Template nginx.conf to listen on $PORT and fall back to /index.html for SPA routes.
+FROM node:lts-slim AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:lts-slim
+WORKDIR /app
+# Bake the static server at BUILD time — the deploy runtime rootfs is read-only
+# (only /tmp is writable), so nothing can be installed or written at boot.
+RUN npm i -g serve
+COPY --from=build /app/dist ./dist
+USER node
+CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT:-3000}"]
 ```
+
+**Never use dev tooling as the deploy CMD** — `vite preview`, `next dev`, `npm run dev`.
+`vite preview` bundles `vite.config.*` to a temp file **next to the config** at boot;
+under the read-only rootfs it dies with EACCES before it ever listens (the router then
+shows "no available server"). This is Vite-internal behavior — moving `HOME`/npm cache
+to `/tmp` does not avoid it. An `nginx` base needs the same care (it writes cache/pid
+paths at boot); the `serve` shape above matches the platform's own static recipe.
+
 
 ### Node backend (build → slim runtime)
 ```dockerfile
@@ -76,6 +97,7 @@ CMD ["bin/my_app", "start"]
 ## Checklist
 
 - [ ] Multi-stage build (build stage → slim runtime stage).
+- [ ] Deploy CMD is a production server, **never** dev tooling (`vite preview` / `next dev` / `npm run dev`); static apps serve the built output.
 - [ ] Binds to `PORT`; no hardcoded port.
 - [ ] Plain HTTP only; no forced HTTPS / self-redirect.
 - [ ] Single port; static frontend served by the same process.
