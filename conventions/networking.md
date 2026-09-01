@@ -29,8 +29,11 @@ injects that name instead of `PORT`.
   hardcode a port number.
 - **Listen on plaintext HTTP.** TLS is handled by the front terminator. Your app
   should accept plain HTTP requests.
-- **`127.0.0.1` or `0.0.0.0` are both fine.** Respecting `PORT` is what matters;
-  the bind address can be either. The platform reaches you on loopback.
+- **`127.0.0.1` or `0.0.0.0` are both fine for local preview** (it reaches you on
+  loopback). **But when the container is deployed (e.g. to Hestia) the platform
+  reaches you on the container's own IP, not loopback — bind `0.0.0.0` there or the
+  health check fails.** Preferring `0.0.0.0` everywhere gives one bind that works for
+  both. Respecting `PORT` is what matters either way; never hardcode a port.
 - **Build URLs from the request / forwarded headers.** The public hostname is
   provided at runtime (e.g. via `PHX_HOST`). Generate absolute URLs from that or
   from incoming request data — do not hardcode a domain.
