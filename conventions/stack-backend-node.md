@@ -14,8 +14,10 @@ these notes only ensure the preview runtime can detect, run, and deploy your app
   `package.json`. The script is your entry point — the platform runs it to start the
   server (e.g. `"start": "node server.js"`).
 - **Bind to the injected port.** The platform sets `PORT` in the environment; read it
-  with `process.env.PORT`. Listening on `127.0.0.1` or `0.0.0.0` is both fine — what
-  matters is that you honor `PORT` and do not hardcode a number.
+  with `process.env.PORT`. `127.0.0.1` or `0.0.0.0` are both fine for local preview,
+  but **bind `0.0.0.0` for a deployed container (e.g. Hestia)** — a loopback-only bind
+  is unreachable there and fails the health check. `app.listen(process.env.PORT, '0.0.0.0')`
+  works for both. Never hardcode a number.
 - **Monolithic, single port (recommended).** If you also have a static frontend, have
   the same server serve those static assets so everything is reachable on one port.
   Single-port is the recommended shape, not a forced architecture.

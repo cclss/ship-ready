@@ -4,11 +4,11 @@ A minimal **deploy** contract for shipping your project as a single container im
 
 ## How this relates to local preview (read this first)
 
-Local preview runs your app **from source** — it detects the framework by inspecting source markers (`package.json`, `mix.exs`, a root `index.html`, or a prebuilt output dir). It does **not** build your Dockerfile to preview.
+Local preview runs your app **from source** — it detects the framework by inspecting source markers (`package.json`, `mix.exs`, `requirements.txt` + `Procfile`, a root `index.html`, or a prebuilt output dir). It does **not** build your Dockerfile to preview.
 
 So keep both paths intact:
 
-- **Source markers** drive the local preview path. Keep `package.json` / `mix.exs` / `index.html` in place.
+- **Source markers** drive the local preview path. Keep `package.json` / `mix.exs` / `requirements.txt` + `Procfile` / `index.html` in place.
 - **The Dockerfile** is the deploy path. Add it for shipping; it does not change preview.
 
 ⚠️ **If the repo has only a `Dockerfile` (or `docker-compose.yml`) and no source markers, local preview is blocked** — it gets classified as container-only and cannot be previewed from source. The fix is to keep your real source files in the repo alongside the Dockerfile, not to remove the Dockerfile.
@@ -16,7 +16,9 @@ So keep both paths intact:
 ## Image contract
 
 - **Single port, monolithic.** One container exposes one port. If you have a static frontend, serve it from the same backend on that one port. (Single port is the recommended shape, not a forced architecture.)
-- **Respect `PORT`.** Bind to the `PORT` environment variable at runtime; never hardcode a port. The platform injects `PORT` (and `HOST=127.0.0.1`).
+- **Respect `PORT`.** Bind to the `PORT` environment variable at runtime; never
+  hardcode a port. Local preview supplies a loopback `HOST`; Hestia injects
+  `PORT` but not `HOST`, so a deployed container must bind `0.0.0.0:$PORT`.
 - **Plain HTTP.** Listen in plaintext HTTP. TLS is terminated upstream by the proxy/orchestrator. Do **not** force `https://` or self-redirect to HTTPS.
 - **Config via env.** Read all config and secrets from environment variables. Never bake secrets into the image or commit them.
 - **Multi-stage build.** Build in one stage, copy artifacts into a slim runtime stage — smaller, faster, fewer attack surfaces.
@@ -74,6 +76,13 @@ USER node
 CMD ["npm", "start"]
 ```
 
+### React Router v8 Framework Mode (stable successor to Remix v1/v2)
+
+React Router v8 has two different image shapes: an SSR/BFF Node process and a
+static `build/client` image. Do not treat both as a generic Vite `dist/` build.
+Use the pinned, non-root reference images and matching `.dockerignore` in
+`stack-react-router-v8.md`.
+
 ### Phoenix / Elixir (build → release)
 ```dockerfile
 FROM hexpm/elixir:1.16-otp-26-alpine AS build
@@ -94,6 +103,24 @@ USER app
 CMD ["bin/my_app", "start"]
 ```
 
+### Python backend (deps → slim runtime)
+```dockerfile
+FROM python:3.12-slim AS build
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim
+WORKDIR /app
+RUN useradd --create-home app
+COPY --from=build /install /usr/local
+COPY . .
+USER app
+# Same production server as the Procfile web: line — never flask run /
+# manage.py runserver / --reload (dev tooling; read-only rootfs at deploy).
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+```
+
 ## Checklist
 
 - [ ] Multi-stage build (build stage → slim runtime stage).
@@ -103,4 +130,4 @@ CMD ["bin/my_app", "start"]
 - [ ] Single port; static frontend served by the same process.
 - [ ] Runs as non-root, slim base image.
 - [ ] Secrets read from env; nothing secret baked into the image.
-- [ ] **Source markers (`package.json` / `mix.exs` / `index.html`) kept in the repo** so local preview still works.
+- [ ] **Source markers (`package.json` / `mix.exs` / `requirements.txt` + `Procfile` / `index.html`) kept in the repo** so local preview still works.

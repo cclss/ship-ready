@@ -43,14 +43,17 @@ it in a separate section of this file, but do not delete or weaken BASELINE.
 | What you are building | Read |
 |---|---|
 | Static site (HTML/CSS/JS) | `conventions/stack-static.md` |
-| React frontend (SPA) | `conventions/stack-frontend-react.md` |
+| React frontend (Vite / CRA / Next) | `conventions/stack-frontend-react.md` |
+| React Router v8 Framework Mode (stable successor to Remix v1/v2) | `conventions/stack-react-router-v8.md` |
 | Node backend (express/fastify/nest/vanilla) | `conventions/stack-backend-node.md` |
 | Elixir/Phoenix/LiveView | `conventions/stack-phoenix.md` |
+| Python backend (FastAPI/Django/Flask) | `conventions/stack-python.md` |
 | Using a database or cache | `conventions/datastores.md` |
 | Environment variables and secrets | `conventions/env-and-secrets.md` |
 | Ports/host/TLS | `conventions/networking.md` |
 | Auto-detection is ambiguous | `conventions/preview-toml.md` (escape hatch) |
 | Deploying later | `conventions/deployment-docker.md` |
+| Publishing to Hestia (`deploy.toml`, or deploying with no manifest) | `conventions/deploy-toml.md` |
 
 Most of the time, following the contract above is enough — auto-detection brings
 up a local preview on its own. For monorepos, non-standard builds, or special
@@ -59,3 +62,17 @@ whenever your build/run shape changes.
 
 For the reasoning and how-to behind each contract, read
 `conventions/golden-rules.md` first.
+
+## Shipping
+
+When the app is ready to deploy, choose one complete path:
+
+- **Fallback:** leave `deploy.toml` absent so Hestia can derive the deployment
+  from `preview.toml` or auto-detection.
+- **Explicit:** commit `deploy.toml`, every referenced `Dockerfile`, and
+  `.dockerignore` together. A `deploy.toml` disables Hestia's Dockerfile
+  generation, so never add a partial manifest by itself.
+
+See `conventions/deploy-toml.md` for the schema and how to derive the explicit
+bundle from your app (and your `preview.toml`, if any). These are deploy
+artifacts only — they do not change your code or weaken BASELINE.

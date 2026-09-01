@@ -15,6 +15,10 @@ Add a manifest only when auto-detection is ambiguous or wrong:
 - **Non-standard build/run** — your build or start command isn't the framework default.
 - **Custom output directory** — your built assets land somewhere other than the default.
 - **Required env** — you want to declare keys the app must have to boot.
+- **React Router v8 Framework Mode** (the stable successor to Remix v1/v2) —
+  its Vite marker alone cannot distinguish SSR from SPA/static, and its output
+  is `build/`, not the normal Vite `dist/`. Use the exact manifests in
+  `stack-react-router-v8.md`.
 
 When in doubt, leave it out and rely on the conventions in the other docs first.
 
